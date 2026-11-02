@@ -9,4 +9,7 @@ const html = source.replace('<link rel="stylesheet" href="styles.css">', '<style
   .replace('<script src="app.js"></script>', () => script(app));
 await mkdir(new URL('artifacts/', root), { recursive: true });
 await writeFile(new URL('artifacts/Taqyeem-Demo.html', root), html);
-console.log('Created artifacts/Taqyeem-Demo.html: portable fictional demo; browser-local changes only.');
+await mkdir(new URL('docs/', root), { recursive: true });
+await writeFile(new URL('docs/index.html', root), html);
+await writeFile(new URL('docs/.nojekyll', root), '');
+console.log('Created artifacts/Taqyeem-Demo.html and docs/index.html: portable fictional demo and GitHub Pages export; browser-local changes only.');

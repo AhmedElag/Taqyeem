@@ -236,3 +236,51 @@
 }
 @media(prefers-reduced-motion:reduce){.admin-dashboard .admin-metric,.admin-dashboard .admin-action,.admin-dashboard .admin-program-row{transition:none}}
 @media print{.admin-dashboard .admin-welcome,.admin-dashboard .admin-metrics,.admin-dashboard .admin-insights{break-inside:avoid}.admin-dashboard .admin-chart-scroll{overflow:visible}.admin-dashboard .admin-chart-svg{min-width:0}}
+
+/* Teaching and review tools stay within the existing resident workflow. */
+.review-hub{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px 24px;background:#f0f6f3;border:1px solid #dce8e1;border-radius:14px;margin-bottom:24px}
+.review-hub h2{font-size:15px;margin:0 0 5px}.review-hub p{font-size:12px;color:#6c8177;line-height:1.7;margin:0}
+.review-hub-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.review-hub-actions .btn{min-height:42px;white-space:normal}.review-hub .pill{white-space:nowrap}
+.review-list{display:flex;flex-direction:column;gap:12px}
+.card.review-list{padding:20px}
+.review-request-row{display:flex;align-items:center;justify-content:space-between;gap:18px;width:100%;padding:17px 18px;border:1px solid #e5ebe8;border-radius:12px;background:#fff;text-align:start;color:var(--ink)}
+.review-request-row>div{min-width:0}.review-request-row strong{font-size:13px;display:block;line-height:1.6}.review-request-row p,.review-request-row small{font-size:11px;color:#74887d;line-height:1.7;margin-top:4px}
+button.review-request-row:hover{border-color:#a4c1b3;background:#f8fbf9}.review-request-row .btn{flex-shrink:0;min-height:42px}
+.review-status{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:7px;background:#edf4ef;color:#376e56;font-size:11px;font-weight:650;line-height:1.5}
+.review-status.pending{background:#fbf1de;color:#84662c}.review-status.changes_requested{background:#faf0e8;color:#955e35}.review-status.approved{background:#e8f4ec;color:#36764d}.review-status.cancelled,.review-status.superseded{background:#f0f2f3;color:#718087}
+section.review-status{display:flex;flex-direction:column;align-items:flex-start;gap:9px;width:100%;padding:17px 19px;border:1px solid #dae8df;border-radius:12px;font-weight:400;overflow-wrap:anywhere}section.review-status>strong{font-size:13px}section.review-status p{font-size:12px;line-height:1.75;white-space:pre-line}section.review-status .btn{min-height:40px}
+.review-snapshot{border:1px solid var(--line);border-radius:12px;padding:19px;margin-block:18px;background:#fbfcfb;overflow-wrap:anywhere}
+.review-snapshot h3{font-size:14px;margin-bottom:10px}.review-snapshot p{font-size:12px;line-height:1.85;white-space:pre-line}
+.review-snapshot table{width:100%;border-collapse:collapse}.review-snapshot th,.review-snapshot td{padding:10px 8px;border-bottom:1px solid #e8eeea;text-align:start;font-size:12px}.review-snapshot td:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}.review-snapshot tr:last-child td{border-bottom:0}
+.review-snapshot .rating-summary{padding:8px 0 16px}.review-snapshot .rating-summary strong{font-size:32px}
+.teaching-panel{margin-block:20px}.teaching-panel .details-content{padding-block:8px 20px}.teaching-panel .details-content>.spread{margin-block:10px 15px;align-items:center}.teaching-panel .btn{min-height:40px}
+.teaching-goal{padding:17px 18px;border:1px solid #d7e6dd;border-inline-start:3px solid #568b70;border-radius:10px;background:#f2f7f3;margin-block:12px 20px;overflow-wrap:anywhere}
+.teaching-goal h3{font-size:12px;color:#4a715a;margin-bottom:7px}.teaching-goal p{font-size:13px;line-height:1.8;white-space:pre-line;color:#294c3b}.teaching-goal small{display:block;font-size:10px;line-height:1.7;color:#73897a;margin-block:7px}.teaching-goal .btn{margin-top:10px}
+.observation-list{display:flex;flex-direction:column;gap:12px;margin-top:14px}.observation-item{padding:15px 17px;background:#f8faf9;border:1px solid #e7ece9;border-radius:10px;overflow-wrap:anywhere}.observation-item p{font-size:12px;line-height:1.85;color:#415a4d;white-space:pre-line}.observation-item small,.observation-item time{font-size:10px;color:#819187;line-height:1.7}.observation-item .spread{margin-bottom:7px;align-items:flex-start}
+.review-schedule{display:flex;align-items:center;gap:7px;flex-wrap:wrap;color:#547362;font-size:11px;line-height:1.7;margin-top:5px}.review-schedule-note{color:#7b8c83;font-size:11px;line-height:1.7;margin-top:7px}.review-schedule select{max-width:190px;min-height:44px}.file-correction-note{display:block;font-size:10px;line-height:1.65;color:#977137;margin-top:5px;overflow-wrap:anywhere}
+.review-schedule-note{display:flex;align-items:center;flex-wrap:wrap;gap:5px 7px}.form-field.review-schedule{align-items:stretch}.form-field.review-schedule select{max-width:none}
+.demo-person-select{font-size:11px;max-width:195px;min-width:0;min-height:31px;padding:5px 24px 5px 9px;border:1px solid #d1e0d7;border-radius:7px;background:#fff;color:#365b48;text-overflow:ellipsis}
+[dir=rtl] .demo-person-select{padding-inline:9px 24px}.lock-button{min-width:36px}
+.lock-screen{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:28px;background:radial-gradient(ellipse at 15% 15%,#e3efe7 0,transparent 55%),#f5f8f6}
+.lock-card{width:min(100%,430px);padding:38px 32px;border:1px solid #e0e9e3;border-radius:22px;background:#fff;box-shadow:0 16px 65px #284b3910;text-align:center;overflow-wrap:anywhere}
+.lock-card .brand{justify-content:center;padding:0;margin-bottom:30px;text-align:start}.lock-card>svg{color:#477e62;width:40px;height:40px;margin-bottom:20px}.lock-card h1{font-size:27px;letter-spacing:-.5px;margin-bottom:10px}.lock-card h2{font-size:24px;margin-bottom:12px}.lock-card p{font-size:13px;line-height:1.8;color:#7a8c80;margin-block:10px 21px}.lock-card .btn{min-height:46px;justify-content:center}.lock-card .form-field{text-align:start;margin-top:18px}.lock-card .form-field input{min-height:46px}.lock-status{padding:12px 14px;margin-block:18px;border-radius:9px;background:#f4f7f5;font-size:12px;color:#5e7968;line-height:1.8}.lock-status.error{background:#fff2e9;color:#986539}.lock-card .language-switch{margin:24px auto 0}.lock-card .subtle{font-size:11px;line-height:1.75}
+@media(max-width:1000px){.demo-bar{gap:8px 13px}.demo-person-select{max-width:170px}.review-hub{padding:19px 21px}.review-hub-actions .btn{font-size:11px}}
+@media(max-width:740px){
+ .review-hub{padding:18px;gap:13px;flex-direction:column;align-items:stretch;margin-bottom:18px}.review-hub h2{font-size:14px}.review-hub-actions{justify-content:flex-start}.review-hub-actions .btn{min-height:44px}
+ .review-request-row{padding:14px;gap:12px;flex-wrap:wrap}.review-request-row>.btn{margin-inline-start:auto}.review-request-row strong{font-size:13px}
+ .review-snapshot{padding:14px}.review-snapshot th,.review-snapshot td{padding:9px 4px;font-size:11px}
+ .teaching-panel .details-content>.spread{flex-wrap:wrap;gap:10px}.teaching-panel .btn{min-height:44px}.teaching-goal{padding:15px}.observation-item{padding:13px 14px}
+ .demo-bar:has(.demo-person-select){padding-block:8px;min-height:96px}.demo-person-select{max-width:none;flex:1 1 180px;min-height:34px;font-size:12px}.demo-bar:has(.demo-person-select)~.sidebar{top:96px}
+ .topbar-actions{gap:6px}.topbar-actions>.avatar{display:none}.lock-card{padding:30px 24px;border-radius:18px}.lock-card h1{font-size:25px}.lock-screen{padding:20px}
+ .modal-footer{flex-wrap:wrap}.modal-footer .btn{min-height:44px;white-space:normal}.file-correction-note{font-size:11px}
+}
+/* Give the brand a clear separation from navigation at every viewport size. */
+.sidebar>.brand{margin-block-end:32px;flex-shrink:0}
+.category-detail>strong,#evaluation-completion{direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+.detail-score{white-space:nowrap}
+.modal-body>.spread:has(.detail-score){align-items:flex-start;flex-wrap:wrap}
+.modal-body>.spread:has(.detail-score)>.inline{min-width:0;max-width:100%}
+.modal-body>.spread:has(.detail-score)>.inline>div:last-child{min-width:0;overflow-wrap:anywhere}
+.modal-body>.spread:has(.detail-score)>.text-end{margin-inline-start:auto}
+@media print{.review-hub,.lock-button,.review-hub-actions,.teaching-panel .btn{display:none!important}.lock-screen{min-height:0}.lock-card{box-shadow:none}.teaching-panel{break-inside:avoid}}

@@ -113,6 +113,17 @@ Review the remote database name before confirming. Migrations create tables, ind
 
 Do not edit an already applied migration to upgrade a running deployment. Add a new numbered migration and follow the backup/staging procedure in `OPERATIONS.md`.
 
+### Upgrade an existing deployment to 2.1
+
+Apply `0002_review_workflows.sql` with the normal migration command before deploying this application version. It adds review intervals, private observations/goals, versioned file corrections, and assessment-review snapshots while retaining existing records. Existing residents receive a four-week interval; existing file entries start at version 1. The application health check requires schema version 2.
+
+```sh
+npm run db:migrate:remote
+npm run deploy
+```
+
+Rehearse the upgrade on staging first. Migrations are ordered and tracked by Wrangler; run the migration command rather than manually executing an already-applied SQL file again. Keep the existing database binding and administrator account. Do not bootstrap a second time.
+
 ## 8. Deploy
 
 ```sh
@@ -164,6 +175,11 @@ Use a separate staging Worker/database and controlled test addresses before ente
 7. Export a filtered administrator CSV, switch to Arabic, and check the result in the institution’s spreadsheet software.
 8. Deactivate the resident and verify their existing session loses access. Rehearse restoring a backup into a separate disposable database.
 9. Confirm requested sign-in email arrives, expires, is single use, and works after sign-out. Generic “check your email” UI is not a delivery receipt.
+10. Set a resident to a 1-week and then 52-week review interval. Confirm the next date follows the last publication and that the due queue is separate from monthly reporting.
+11. Add a private observation and goal. Check that students and unassigned doctors receive neither. Mark the goal reviewed and create the next one.
+12. Send a draft to a doctor who does not supervise that resident. Confirm they see only the shared snapshot and can approve/request changes; the author must still publish. Edit an approved draft and verify it requires a new review or explicit cancellation.
+13. Correct an already-reviewed file number as its student owner. Confirm the reference needs another acknowledgment, the old number remains in faculty history, and a stale review cannot acknowledge the correction.
+14. Lock a signed-in staff screen. Verify a replay of its old cookie is rejected, reopening the tab requires sign-in, and the saved draft is available after a new authenticated session.
 
 Use real records only after the institution approves the workflow, rubric, hosting, and access arrangements. Completed package checks are documented in `VERIFICATION.md`.
 
@@ -181,3 +197,7 @@ Use real records only after the institution approves the workflow, rubric, hosti
 | `npm run deploy` | Verify and deploy the configured Worker |
 
 Official references: [Worker assets](https://developers.cloudflare.com/workers/static-assets/binding/), [D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/), [Wrangler D1 commands](https://developers.cloudflare.com/d1/wrangler-commands/), [Resend send-email API](https://resend.com/docs/api-reference/emails/send-email).
+
+## Publish the demonstration through GitHub Pages
+
+From the repository root, run `npm run build:demo`. It writes the standalone demo and the tracked `docs/index.html`/`docs/.nojekyll` publishing files. Push the source repository, then choose **Settings → Pages → Deploy from a branch**, the pushed branch, and **/docs**. This publishes the fictional interactive demo. `npm run build` produces the live Worker frontend in `public/`; use the Worker deployment for that output because it depends on authenticated API routes.

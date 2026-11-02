@@ -3,6 +3,8 @@ import {authentication,handleAuth,requireCsrf} from './auth.mjs';
 import {workspace,report} from './workspace.mjs';
 import {handleAdmin} from './admin.mjs';
 import {handleEvaluation,handleFiles} from './evaluations.mjs';
+import {handleTeaching} from './teaching.mjs';
+import {handleReviews} from './reviews.mjs';
 
 export default {
   async fetch(request,env,ctx){
@@ -18,7 +20,7 @@ export default {
       }
       if(!env.DB)fail(503,'database_not_configured','The database binding is missing.');
       if(path==='/api/health'&&request.method==='GET'){
-        try{const schema=await one(env.DB,'SELECT version FROM schema_meta WHERE version=1');if(!schema)throw new Error();await one(env.DB,'SELECT id FROM users LIMIT 1');}catch(_){fail(503,'database_not_ready','Apply the database migrations before starting Taqyeem.');}
+        try{const schema=await one(env.DB,'SELECT version FROM schema_meta WHERE version=2');if(!schema)throw new Error();await one(env.DB,'SELECT id FROM users LIMIT 1');}catch(_){fail(503,'database_not_ready','Apply the database migrations before starting Taqyeem.');}
         return secureResponse(json({ok:true,app:'Taqyeem'}),cfg);
       }
       if(!['GET','POST','PATCH','PUT','DELETE'].includes(request.method))fail(405,'method_not_allowed','This method is not available.');
@@ -29,7 +31,7 @@ export default {
       let response;
       if(path==='/api/workspace'&&request.method==='GET')response=await workspace(env,cfg,actor);
       else if(path==='/api/reports'&&request.method==='GET')response=await report(request,env,actor);
-      else response=await handleAdmin(path,request,body,env,cfg,actor)||await handleEvaluation(path,request,body,env,cfg,actor)||await handleFiles(path,request,body,env,cfg,actor);
+      else response=await handleAdmin(path,request,body,env,cfg,actor)||await handleEvaluation(path,request,body,env,cfg,actor)||await handleFiles(path,request,body,env,cfg,actor)||await handleTeaching(path,request,body,env,cfg,actor)||await handleReviews(path,request,body,env,cfg,actor);
       if(!response)fail(404,'not_found','This endpoint is not available.');return secureResponse(response,cfg);
     }catch(error){
       if(error instanceof HttpError)return secureResponse(json({error:{code:error.code,message:error.message}},error.status),cfg);

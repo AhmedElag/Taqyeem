@@ -5,15 +5,16 @@ Taqyeem is a bilingual assessment and training-activity application for a psychi
 
 The English interface is the default. Arabic changes the interface language and reading direction. Both languages use the same accounts, records, question identities, and scoring rules.
 
-This document describes the v2 deployment package. The SQL migration is the authoritative physical schema; `API-CONTRACT.md` defines the interface between the frontend and the server. The editable companion is `Taqyeem-Database-and-Workflows.drawio`. Deployment configuration and the result of the final verification belong to the deployment guide and test output, rather than being inferred from this design.
+This document describes the v2.1 deployment package. The ordered SQL migrations are the authoritative physical schema; `API-CONTRACT.md` defines the interface between the frontend and the server. The editable companion is `Taqyeem-Database-and-Workflows.drawio`. Deployment configuration and the result of the final verification belong to the deployment guide and test output, rather than being inferred from this design.
 
 ## 1. Decisions that make the first release understandable
 
 | Decision | Resulting behavior |
 | --- | --- |
-| One primary supervising psychiatrist per resident | A doctor works with a clearly defined resident list. A previous assignment remains in history when a resident changes supervisor. Multiple concurrent assessors are a later extension. |
-| One authoritative published assessment per resident per month | The application knows which assessment supplies the resident's displayed rating. A correction creates a new publication and retains the earlier one. |
+| One primary supervising psychiatrist per resident | A doctor works with a clearly defined resident list. A previous assignment remains in history when a resident changes supervisor. A referral to another faculty member shares a frozen assessment snapshot without changing the primary assignment. |
+| One current published assessment per resident per reporting month | The application knows which assessment supplies the resident's displayed rating. A correction creates a new publication and retains the earlier one. |
 | One overall number in the student interface | The student API returns the score and period, not the category breakdown, private notes, peers, or department reports. |
+| Review reminders independent of reporting month | The administrator sets 1–52 weeks per resident. Last publication plus the interval determines the next due date; a repeat publication in the same month keeps immutable history and one current monthly result. |
 | Equal weighting for the initial rubric | The server averages all required category scores. It retains calculation precision and formats the display to one decimal place. |
 | Questions and publications have immutable history | Changing a question or moving a resident to another training track cannot rewrite an earlier assessment. |
 | Accounts are deactivated rather than deleted | Access stops while attribution and educational records remain available to authorized staff. |
@@ -32,7 +33,7 @@ The application uses native Worker JavaScript and Web Crypto. It does not need a
 | Mode | Purpose | Storage and access |
 | --- | --- | --- |
 | Demonstration | Let the family and department explore fictional workflows | Browser-local sample records and a visible role selector. It does not provide real role protection. |
-| Live deployment | Operate the hospital's own configured instance | Server sessions, database records, server-enforced permissions, and no demo role selector. Only the language preference belongs in localStorage. |
+| Live deployment | Operate the hospital's own configured instance | Server sessions, database records, server-enforced permissions, and no demo role selector. Only the language preference belongs in localStorage; a non-sensitive sessionStorage lock flag keeps the interface locked across reloads. |
 
 The demo dataset is excluded from the generated production frontend. Production initialization creates the psychiatry training configuration; it does not import fictional doctors, residents, assessments, or file references. The first administrator is created through a separate, single-use bootstrap procedure using an explicitly configured email address.
 
@@ -64,11 +65,13 @@ The model separates identity, training structure, assessment history, and activi
 | --- | --- |
 | Programs / tracks | Bilingual training-track identity and presentation. |
 | Doctor program membership | Which active psychiatrists may supervise a training track. |
-| Resident profile / enrollment | Current program and training year. |
+| Resident profile / enrollment | Current program, training year, and review interval in weeks. |
 | Supervision assignments | Current primary supervisor plus the ended assignment history. |
 | Template versions and questions | Immutable bilingual rubric revisions, stable question identities, and question order. |
 | Evaluations and scores | Draft state, publication state, the selected template, category scores, author, resident, period, and revision metadata. |
 | Educational notes | Supervisor feedback associated with the assessment; excluded from student responses and ordinary report exports. |
+| Assessment review referrals | Immutable draft snapshot and version/context sent to one selected faculty member; explicit approval or requested changes. |
+| Quick observations / teaching goals | Private educational observations and at most one open teaching goal for a resident. |
 | Current publication reference | Identifies the authoritative assessment for a resident and month without deleting previous publications. |
 
 ### Activity and accountability
@@ -76,12 +79,13 @@ The model separates identity, training structure, assessment history, and activi
 | Record group | Responsibility |
 | --- | --- |
 | File log | Resident-owned file-number reference, work date, submission time, and review status. |
+| File correction history | Immutable old/new identifier, file version, student actor, and whether renewed acknowledgment is required. |
 | Review attribution | Which authorized doctor/admin reviewed a submitted reference and when. |
 | Audit events | Who performed an administrative or assessment action, when it occurred, and which record was affected. Audit metadata must not duplicate secret links or private note text. |
 
 ### Physical tables in the delivered migration
 
-The following **20 tables** match `migrations/0001_initial.sql`. The editable ERD splits them into two pages to keep the relationships readable. `PK` denotes a primary key and `FK` denotes a foreign key. The migration contains the complete field types, indexes, checks, and triggers.
+The following **24 tables** match `migrations/0001_initial.sql` and `migrations/0002_review_workflows.sql`. The editable diagrams preserve the original ERD pages and add a review-workflow page identifying the four new record groups. `PK` denotes a primary key and `FK` denotes a foreign key. The migration contains the complete field types, indexes, checks, and triggers.
 
 | Table | Key and main relationship | Stored responsibility / important constraint |
 | --- | --- | --- |
@@ -90,21 +94,25 @@ The following **20 tables** match `migrations/0001_initial.sql`. The editable ER
 | `template_versions` | PK `id`; FKs `program_id`, `created_by` | Immutable rubric revision, unique within program/version. |
 | `template_questions` | Composite PK `template_version_id, question_key` | Immutable bilingual wording/order; positions and each language's labels are unique within a version. |
 | `doctor_programs` | Composite PK/FKs `doctor_id, program_id` | Doctor eligibility for each track. |
-| `resident_profiles` | PK/FK `user_id`; FK `program_id` | Current enrollment and training year 1–6. |
+| `resident_profiles` | PK/FK `user_id`; FK `program_id` | Current enrollment, training year 1–6, and `review_interval_weeks` 1–52 (default 4). |
 | `assignments` | PK `id`; FKs `resident_id`, `doctor_id`, `created_by` | Start/end times preserve supervisor history. A partial unique index permits one unended assignment per resident. |
 | `invitations` | PK `id`; FKs `user_id`, `program_id`, `created_by` | Unique hashed token; expiry and acceptance/revocation timestamps. Only one pending invitation per account. The intended role is taken from the referenced user. |
 | `login_tokens` | PK `token_hash`; FK `user_id` | Single-use login challenge, expiry, use time, and account authorization version. |
 | `sessions` | PK `id`; FK `user_id` | Unique hashed verifier, account authorization version, absolute expiry, last activity, and revocation. |
-| `evaluations` | PK `id`; FKs `resident_id`, `doctor_id`, `program_id`, `template_version_id`, `base_published_id` | Draft or immutable publication with saved program/year/month, overall mean, author, and version. One draft per resident/evaluator/month. |
+| `evaluations` | PK `id`; FKs `resident_id`, `doctor_id`, `program_id`, `template_version_id`, `base_published_id` | Draft or immutable publication with saved program/year/month, overall mean, author, and version. One draft per resident/evaluator/month. `review_required` prevents an edited referred draft from bypassing required fresh approval. |
 | `evaluation_heads` | Composite PK `resident_id, period`; FK `published_id` | Exactly one authoritative published revision for a resident/month. Triggers require the pointed-to publication to match that resident and month. |
 | `evaluation_questions` | Composite PK `evaluation_id, position`; FK `evaluation_id` | Wording/order snapshots and nullable draft scores; scored values must be integers 1–10. Published snapshots cannot change. |
 | `evaluation_notes` | PK/FK `evaluation_id` | Bilingual educational notes, up to 3,000 characters per language. Published notes cannot change. |
-| `file_log` | PK `id`; FKs `resident_id`, `reviewed_by` | Reference number, work/submission dates, and review attribution. Normalized number is unique within each resident. |
+| `file_log` | PK `id`; FKs `resident_id`, `reviewed_by` | Reference number, work/submission dates, and review attribution. Normalized number is unique within each resident; `version` protects corrections/acknowledgment and `needs_recheck` records renewed review. |
 | `audit_events` | PK `id`; FK `actor_id` | Append-only action, subject reference, limited metadata, and timestamp. `subject_id` is an action-dependent reference, not an FK to one table. |
 | `rate_limit_buckets` | PK `bucket_key` | Request window and counter. Sensitive request keys are hashed by the application. |
 | `bootstrap_state` | PK `singleton`, constrained to 1 | One-time administrator initialization marker. |
 | `transaction_guards` | PK `id`; `ok` constrained to 1 | Short-lived conditional guard used inside a transaction to force rollback when an expected record/version no longer matches. |
 | `schema_meta` | PK `version` | Migration readiness marker and application time. |
+| `file_corrections` | PK `id`; FKs `file_id`, `changed_by` | Immutable original/new number, time, version, and prior acknowledgment state; one correction per file version. |
+| `observations` | PK `id`; FKs `resident_id`, `doctor_id` | Immutable private educational observation and attribution; up to 1,500 characters per language. |
+| `teaching_goals` | PK `id`; FKs `resident_id`, `doctor_id`, `reviewed_by` | Immutable goal content with one-time review completion; partial unique index permits one open goal per resident. |
+| `evaluation_reviews` | PK `id`; FKs `evaluation_id`, `resident_id`, `from_doctor_id`, `to_doctor_id`, `template_version_id`, `base_published_id` | Immutable JSON assessment snapshot bound to draft/resident/context versions; state transitions and one current request per evaluation are constrained. |
 
 Published rows are never given a mutable “superseded” database status. When a correction succeeds, `evaluation_heads.published_id` moves to the new immutable row; the earlier row remains `published` and is simply no longer the current head. The API may derive a superseded indicator from that relationship.
 
@@ -145,10 +153,14 @@ For example, scores totalling 84 across ten categories produce **8.4 / 10**. An 
 | Assign or reassign the primary supervisor | Yes | No | No |
 | Revise assessment templates | Yes | No | No |
 | Read resident profile and submitted file references | All authorized department records | Current assigned residents | Own permitted profile and references |
-| Read category scores and educational notes | Yes | Current assigned residents | No |
+| Read category scores and educational notes | Yes | Current assigned residents; explicitly referred snapshot only for an unassigned resident | No |
 | Save a draft / publish a rating | Any resident | Current assigned residents | No |
 | See a published overall rating | Yes | Current assigned residents | Own latest published period only |
-| Submit a file number | No | No | Own account only |
+| Submit or correct a file number | No | No | Own account only, with version checks |
+| Add private observations/goals or mark a goal reviewed | Yes | Current assigned residents | No |
+| Send a saved draft for faculty review | Author-owned draft | Author-owned draft for an assigned resident | No |
+| Respond to a review request | When selected as recipient | When selected as recipient | No |
+| Change the review interval | Yes | No | No |
 | Mark a file reference reviewed | Yes | Current assigned residents | No |
 | Export department reports | Yes | No | No |
 
@@ -156,7 +168,7 @@ In live mode, the server derives the submitting resident or evaluator from the s
 
 The student workspace is deliberately a different response projection. It contains the student's own permitted profile, own file references, and either `{score, period}` or no rating. It must not fetch full evaluations into the browser and merely hide them with CSS or navigation. Published notes and category scores remain outside that response.
 
-The ordinary staff workspace returns current published assessments and the signed-in evaluator's own drafts. A different supervisor's unfinished draft is not exposed merely because the administrator or a newly assigned doctor can read the resident's published history. Older publication revisions are retained in the database; a dedicated revision-history browsing screen is outside this first interface.
+The ordinary staff workspace returns current published assessments and the signed-in evaluator's own drafts. Incoming review requests additionally carry their frozen assessment snapshots. This referral grants no access to the resident's files, other assessments, observations, or goals. A different supervisor's unfinished draft is not exposed merely because the administrator or a newly assigned doctor can read the resident's published history. Older publication revisions are retained in the database; the ordinary monthly display selects only the current publication. File correction and referral history are available to their authorized faculty workflows.
 
 ## 6. History and concurrent edits
 
@@ -204,15 +216,21 @@ Operational preparation includes verified email delivery, explicit application o
 
 The package should be deployed with a valid administrator email, mail sender configuration, secrets, and database binding. Jurisdiction, institutional approval, retention, and identity requirements remain deployment decisions for the hospital. No particular regulatory compliance or hosting-location suitability is asserted here.
 
-## 9. Extensions deliberately outside v2
+## 9. Extensions outside this release
 
-These are potential later changes, not features implied by the first release:
+These remain potential later changes:
 
 - Multiple concurrent supervisors contributing to a moderated or weighted final score.
-- A formal review/approval stage before a student's score is released.
-- Rotation calendars, attendance, learning plans, or portfolio uploads.
+- Mandatory approval chains involving multiple sequential reviewers.
+- Rotation calendars, attendance, comprehensive learning plans, or portfolio uploads.
 - Hospital identity-provider integration and an institution-specific MFA policy.
 - Patient-record system integration or clinical information storage.
 - Multi-hospital tenancy and cross-institution reporting.
 
 The database history and server authorization structure are intended to make those decisions possible later without weakening the resident's current limited view.
+
+## 10. Review handoff and screen locking
+
+A saved draft can be referred to any other active psychiatrist or the administrator. Approval is bound to exactly the requested draft version, score/note payload, rubric, resident profile/assignment version, and current publication head. Pending and changes-requested drafts cannot publish. An edit supersedes the prior snapshot while retaining `review_required`; the author must obtain a new approval or explicitly cancel review. The selected reviewer gives the decision; the author performs publication. The student's rating changes only at publication.
+
+The lock control hides the private UI and uses real session revocation in live mode. Reauthentication is required to reopen records. An inactivity timer also locks the UI after 15 minutes without interaction; the existing server's independent 30-minute idle and eight-hour absolute expiry continue to apply. An offline lock keeps the interface closed and retries revocation, rather than implying a failed network request revoked the session. The demo's unlock action is visibly labeled as a simulation.

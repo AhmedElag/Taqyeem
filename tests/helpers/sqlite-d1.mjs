@@ -1,11 +1,14 @@
 import {DatabaseSync} from 'node:sqlite';
-import {readFileSync} from 'node:fs';
+import {readFileSync,readdirSync} from 'node:fs';
 
 // Tests use SQLite's real foreign keys, triggers and transactional rollback; no SQL mocks.
 export class SqliteD1 {
   constructor({migrate=true,seed=true}={}){
     this.sqlite=new DatabaseSync(':memory:');this.sqlite.exec('PRAGMA foreign_keys=ON;');
-    if(migrate)this.sqlite.exec(readFileSync(new URL('../../migrations/0001_initial.sql',import.meta.url),'utf8'));
+    if(migrate){
+      const directory=new URL('../../migrations/',import.meta.url);
+      for(const file of readdirSync(directory).filter(name=>/^\d+.*\.sql$/.test(name)).sort())this.sqlite.exec(readFileSync(new URL(file,directory),'utf8'));
+    }
     if(migrate&&seed)this.seed();
     this.beforeBatch=null;this.failStatement=null;
   }

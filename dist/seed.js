@@ -101,13 +101,33 @@ window.makeTaqyeemSeed = function () {
     };
   });
   // Capture the original assessment context; later profile edits must not rewrite history.
+  const reminderWeeks = { s1: 4, s2: 2, s3: 1, s4: 8, s5: 1, s9: 2 };
+  students.forEach(function (student) {
+    student.reviewIntervalWeeks = reminderWeeks[student.id] || 4;
+    student.recordVersion = 1;
+  });
+  doctors.forEach(function (doctor) { doctor.role = 'doctor'; });
+  const reviewStudent = students.find(function (student) { return student.id === 's9'; });
+  const reviewProgram = programs.find(function (program) { return program.id === reviewStudent.programId; });
+  const reviewDraft = {
+    id: 'ev-draft-s9', studentId: 's9', doctorId: 'd4', period: '2026-11', status: 'draft',
+    scores: [8, 7, 8, 8, 7, 8, 9, 8, 8, 8],
+    questions: reviewProgram.questions.map(function (question) { return Object.assign({}, question); }),
+    note: { en: 'Clear preparation and thoughtful participation in supervision. Please review the teaching feedback before I publish.', ar: 'تحضير واضح ومشاركة متأنية في الإشراف. يرجى مراجعة الملاحظات التعليمية قبل النشر.' },
+    createdAt: '2026-11-01T11:00:00.000Z'
+  };
+  evaluations.push(reviewDraft);
   evaluations.forEach(function (evaluation) {
     const student = students.find(function (entry) { return entry.id === evaluation.studentId; });
     const program = programs.find(function (entry) { return entry.id === student.programId; });
     evaluation.programId = program.id;
     evaluation.trainingYear = student.year;
     evaluation.templateVersionId = program.templateVersionId;
+    evaluation.version = 1;
+    evaluation.basePublishedId = null;
+    if (evaluation.status === 'published') evaluation.publishedAt = evaluation.createdAt;
   });
+  files.forEach(function (file) { file.version = 1; file.needsRecheck = false; file.corrections = []; });
   return {
     version: 2,
     students: students,
@@ -115,6 +135,25 @@ window.makeTaqyeemSeed = function () {
     programs: programs,
     evaluations: evaluations,
     files: files,
+    observations: [
+      { id: 'observation-hana', studentId: 's5', doctorId: 'd1', text: { en: 'Prepared a clear case presentation during today\'s teaching session. Revisit the structure of the summary at the next meeting.', ar: 'قدمت عرضاً واضحاً للحالة خلال الجلسة التعليمية اليوم. تُراجع طريقة تنظيم الملخص في اللقاء القادم.' }, createdAt: '2026-11-01T09:30:00.000Z' },
+      { id: 'observation-sara', studentId: 's1', doctorId: 'd1', text: { en: 'Responded constructively to feedback and supported a junior colleague in the teaching discussion.', ar: 'تفاعلت مع الملاحظات بصورة بناءة وساعدت زميلاً أصغر خبرة أثناء المناقشة التعليمية.' }, createdAt: '2026-10-31T10:00:00.000Z' }
+    ],
+    goals: [
+      { id: 'goal-hana', studentId: 's5', doctorId: 'd1', text: { en: 'Use a consistent structure for case presentations.', ar: 'استخدام هيكل ثابت ومنظم عند عرض الحالات.' }, createdAt: '2026-10-28T09:00:00.000Z', reviewedAt: null },
+      { id: 'goal-sara', studentId: 's1', doctorId: 'd1', text: { en: 'Present a concise learning summary at the next supervision meeting.', ar: 'تقديم ملخص تعليمي مختصر في جلسة الإشراف القادمة.' }, createdAt: '2026-11-01T09:00:00.000Z', reviewedAt: null }
+    ],
+    reviewers: [{ id: 'admin', name: { en: 'Dr. Khaled Abdelazim', ar: 'د. خالد عبد العظيم' }, role: 'admin' }].concat(doctors.map(function (doctor) { return { id: doctor.id, name: Object.assign({}, doctor.name), role: 'doctor' }; })),
+    reviewRequests: [{
+      id: 'review-demo-farah', evaluationId: reviewDraft.id, studentId: reviewStudent.id,
+      fromDoctorId: 'd4', toDoctorId: 'admin', evaluationVersion: 1, status: 'pending',
+      expectedResidentVersion: 1, templateVersionId: reviewDraft.templateVersionId, basePublishedId: reviewDraft.basePublishedId || null,
+      comment: { en: '', ar: '' }, createdAt: '2026-11-01T11:05:00.000Z', reviewedAt: null,
+      snapshot: {
+        student: { id: reviewStudent.id, name: Object.assign({}, reviewStudent.name), programName: Object.assign({}, reviewProgram.name), year: reviewStudent.year },
+        evaluation: { scores: reviewDraft.scores.slice(), questions: reviewDraft.questions.map(function (question) { return Object.assign({}, question); }), note: Object.assign({}, reviewDraft.note), period: reviewDraft.period, overall: reviewDraft.scores.reduce(function (sum, score) { return sum + score; }, 0) / reviewDraft.scores.length }
+      }
+    }],
     invitations: [{
       id: 'invite-1', name: { en: 'Dr. Hala Sameh', ar: 'د. هالة سامح' },
       email: 'hala.sameh@example.com', role: 'doctor', programId: 'adult', status: 'pending',

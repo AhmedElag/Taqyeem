@@ -7,7 +7,7 @@ The accompanying editable diagrams are in `Taqyeem-Database-and-Workflows.drawio
 ## 1. Prepare the department and activate the administrator
 
 1. The deployment operator configures the real application origin, database binding, administrator email, bootstrap secret, session secret, and mail sender settings.
-2. The operator applies the schema migration and initializes the psychiatry training tracks and editable question templates. Production does not load the fictional demo people or assessments.
+2. The operator applies all ordered schema migrations and initializes the psychiatry training tracks and editable question templates. Production does not load the fictional demo people or assessments.
 3. The operator invokes the authenticated bootstrap operation. The database accepts the first operation only, creates a pending administrator named **Dr. Khaled Abdelazim / د. خالد عبد العظيم**, and returns a single-use activation link.
 4. Dr. Khaled opens that link and confirms acceptance. The server verifies its hash, expiry, account status, and unused state; it activates his account and creates a session atomically.
 5. He can now invite supervising psychiatrists and register residents. A repeated bootstrap request does not create a second administrator or reset ownership.
@@ -33,7 +33,7 @@ The doctor cannot select an administrator role during acceptance. An empty newly
 
 ## 3. Register a resident
 
-1. The administrator enters the resident's name, email, current psychiatry training track, training year, and primary supervising psychiatrist.
+1. The administrator enters the resident's name, email, current psychiatry training track, training year, primary supervising psychiatrist, and a review interval from 1 to 52 weeks.
 2. The server validates that the email is unique and the supervisor is active and eligible for that track.
 3. The account, enrollment, assignment, and invitation are created atomically. The resident can be registered while their access invitation is still pending.
 4. The administrator shares the invitation. On acceptance, the resident receives only the student role.
@@ -50,7 +50,7 @@ The endpoint obtains the account role from the administrator's authorized action
 5. The server ends the session after 30 minutes without activity or eight hours in total. A request using a revoked or expired session is refused and the interface returns to sign-in.
 6. Signing out revokes the current session and clears the cookie. Deactivating the account revokes all its sessions and outstanding access links.
 
-The live role does not come from localStorage or a role switch. Language preference may persist locally; credentials and department records do not.
+The live role does not come from localStorage or a role switch. Language preference may persist locally; credentials and department records do not. A non-sensitive lock flag may persist in sessionStorage so reload cannot reveal a screen that was locked during an offline interruption.
 
 ## 5. Record work using a file number
 
@@ -169,6 +169,41 @@ These scenarios define expected behavior. The current automated test output and 
 10. Deactivate an account and verify its existing session stops working immediately.
 11. Try foreign-origin, missing-CSRF, unauthorized-role, and guessed-record requests and verify denial.
 12. Export one resident's report and verify filters, Arabic text, current-publication selection, and exclusion of notes.
+
+## 14. Review reminders every 1–52 weeks
+
+The administrator sets each resident’s **Review every** value to an integer number of weeks, with 4 weeks as the default. A resident without a published evaluation is due from their joining date. Otherwise the next date is the date of the latest publication in the hospital time zone plus `7 × interval` calendar days.
+
+A due date sends the resident back to the faculty review queue. Draft saves, quick observations, referral requests, and reviewer responses do not move it. A new publication resets the next date. These are in-application reminders; no email or external message is sent by this setting.
+
+Monthly reporting remains monthly. A resident reviewed twice within one month has immutable publication history and one current monthly head, so the report does not double-count them. Changing the interval recomputes the next date against the existing publication rather than pretending a new evaluation occurred.
+
+## 15. Quick observations and one private teaching goal
+
+An assigned doctor or the administrator opens a resident’s staff view, writes a brief observation in the current interface language, and saves it. The record retains author and time. It contains educational feedback about the resident, not patient narrative. Staff can also create one open teaching goal. Marking it reviewed retains its history and allows a new goal.
+
+Students receive none of these records. A doctor receives them only for currently assigned residents. An assessment referral does not share these separate observations/goals with a new reviewer.
+
+## 16. Correct a file reference
+
+The student selects **Correct number** on their own file entry, enters the corrected identifier, and saves it with the version they opened. The server repeats normalization, format, ownership, duplicate, and version checks. A successful correction increments the version and retains the old/new values in faculty history. If the entry was acknowledged, it returns to **Needs review**. The assigned doctor or administrator must acknowledge the corrected version; a stale screen cannot acknowledge the old one by mistake.
+
+## 17. Send an assessment for review
+
+1. The author saves the draft and chooses another active doctor or the administrator.
+2. The server freezes the draft’s scores, questions, private assessment notes, resident context, and version. The new recipient can inspect only that assessment snapshot; they gain no general access to the resident’s files, other evaluations, observations, or goals.
+3. The selected reviewer opens the request and either approves the complete assessment or requests changes with a comment. Their response does not publish a rating.
+4. The author sees the decision. Pending and changes-requested assessments stay unpublished. The author may revise and send again, or explicitly cancel the request.
+5. An approval applies to exactly that draft version and content. Editing supersedes the old snapshot and retains the requirement for fresh approval or explicit cancellation. Changing the resident’s program/year/assignment, template, or publication head also invalidates the old context.
+6. The author publishes the approved unchanged assessment. Only then does the student’s overall score change and the review reminder date reset.
+
+The administrator can inspect referrals and cancel the requirement when appropriate. Only the selected reviewer can submit the review decision. Referral actions appear in the application; they do not claim an email was delivered.
+
+## 18. Lock the screen
+
+The lock control hides the private interface, attempts to save an open draft, and revokes the live server session through the existing logout endpoint. The user must request a new email sign-in link before reopening department records. The interface also locks after 15 minutes of inactivity. If offline revocation fails, the interface stays locked and retries revocation when connectivity returns; the UI does not claim that a failed server request succeeded. Saved drafts remain in the database and can be reopened after authentication.
+
+The fictional demo explicitly offers **Unlock demo**. Its role selector and local storage are demonstration conveniences, not access protection.
 
 ## Supporting references
 

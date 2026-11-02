@@ -7,11 +7,13 @@ A bilingual frontend and deployable backend for **Dr. Khaled Abdelazim’s** psy
 ## What is included
 
 - A polished administrator dashboard, resident directory, supervising-doctor management, invitation flow, monthly evaluation editor, file review, question editor, and filtered reports.
+- Private teaching observations and goals, per-resident review reminders from 1 to 52 weeks, and a draft-review inbox for consultations with another doctor or the administrator.
+- Student file-number corrections with review acknowledgment and history, plus manual and inactivity screen locking.
 - A deliberately limited student workspace: one overall rating out of ten and the resident’s own submitted file references.
 - A Worker API with server-enforced roles and assignments, passwordless email sign-in, expiring invitations, protected sessions, CSRF checks, and audit history.
 - A SQL schema with immutable published assessments, versioned bilingual questions, optimistic revision checks, and assignment history.
 - Three psychiatry starter tracks with ten editable teaching categories. The rubric is a local starting point, not an accredited instrument.
-- Deployment/configuration scripts, repeatable SQL migrations, an integration suite, operational guidance, and an editable six-page database/workflow diagram.
+- Deployment/configuration scripts, repeatable SQL migrations, an integration suite, operational guidance, and an editable database/workflow diagram.
 
 ## Choose the right mode
 
@@ -24,6 +26,12 @@ A bilingual frontend and deployable backend for **Dr. Khaled Abdelazim’s** psy
 | Actual resident information | Do not enter it | After configuration, staging checks, and hospital approval |
 
 The hosted demonstration is separate from the standalone production deployment. Publishing the demo does not provision this package’s real database, email sender, or administrator account.
+
+## Publish the demonstration on GitHub Pages
+
+The package includes a ready-made `docs/index.html` and `docs/.nojekyll`. Copy the contents of the extracted `Taqyeem` folder into your repository, commit, and push. In the repository’s Settings → Pages, select **Deploy from a branch**, your pushed branch, and **/docs**.
+
+After editing the frontend, run `npm run build:demo` before committing. This regenerates both the standalone `artifacts/Taqyeem-Demo.html` and the Pages export. The demo role switch also lets you choose a sample doctor to try both sides of an evaluation handoff.
 
 ## Run the backend locally
 
@@ -55,13 +63,15 @@ This command runs source checks and integration tests, builds the live assets, a
 
 ## Product rules in this release
 
-**Administrator:** Dr. Khaled manages residents and psychiatrists, assigns primary supervisors, edits bilingual categories, reviews assessments/files, and exports reports. Removing an account deactivates it while preserving history.
+**Administrator:** Dr. Khaled manages residents and psychiatrists, assigns primary supervisors, edits bilingual categories, sets each resident’s review interval (1–52 weeks), reviews assessments/files and incoming evaluation requests, and exports reports. Removing an account deactivates it while preserving history.
 
-**Supervising psychiatrist:** works with currently assigned residents, scores each required category from 1 to 10, saves drafts, publishes an assessment, writes private educational feedback, and reviews file references.
+**Supervising psychiatrist:** works with currently assigned residents, scores each required category from 1 to 10, saves drafts, records private teaching observations and goals, publishes an assessment, and reviews file references. A doctor can send a saved draft to another active doctor or the administrator. The recipient sees that assessment snapshot and returns approval or requested changes; the author performs final publication. An explicit referral does not provide access to the resident’s unrelated records.
 
-**Resident / student:** signs in, reads their own latest published overall rating, and submits/views their own file references. The server does not send category scores, private feedback, other users, or administrative reports to that role.
+**Resident / student:** signs in, reads their own latest published overall rating, and submits/views/corrects their own file references. A correction to a reviewed number returns it for acknowledgment. The server does not send category scores, private feedback, teaching goals, review requests, other users, or administrative reports to that role.
 
-One primary supervisor is active per resident. A calendar month is an assessment period. A complete set of equally weighted scores produces one mean, displayed to one decimal place. Corrections preserve the earlier publication. These are explicit first-release choices for Dr. Khaled to review.
+One primary supervisor is active per resident. A calendar month groups reporting snapshots, while the review reminder interval counts weeks from the last published rating (or the joining date before the first publication). Sending a draft for review does not restart that interval. A further publication in the same month preserves the earlier immutable version and updates the month’s current rating. A complete set of equally weighted scores produces one mean, displayed to one decimal place.
+
+The live screen lock ends the authenticated session and requires sign-in again; the demo’s unlock button is explicitly a demonstration. Apply **all** ordered migrations, including the 0002 workflow migration, when upgrading an existing database.
 
 ## Documents and source map
 
