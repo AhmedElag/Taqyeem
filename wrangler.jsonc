@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "taqyeem-psychiatry",
+  "main": "server/worker.mjs",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "single-page-application"
+  },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "taqyeem-psychiatry",
+    "database_id": "00000000-0000-0000-0000-000000000000",
+    "migrations_dir": "migrations"
+  }],
+  "vars": {
+    "APP_ORIGIN": "",
+    "ADMIN_EMAIL": "",
+    "MAIL_FROM": "",
+    "APP_TIMEZONE": "UTC",
+    "DEVELOPMENT": "false"
+  }
+}

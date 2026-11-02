@@ -1,0 +1,30 @@
+{
+  "name": "taqyeem-psychiatry",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Taqyeem — bilingual psychiatry residency assessment, with a Worker API and SQL database.",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:demo": "node scripts/build-demo.mjs",
+    "check": "node scripts/check.mjs",
+    "test": "node --test --test-isolation=none tests/*.test.mjs",
+    "test:runtime": "node tests/workerd-smoke.mjs",
+    "configure": "node scripts/configure.mjs",
+    "check:config": "node scripts/check-config.mjs",
+    "setup:local": "node scripts/setup-local.mjs",
+    "dev:live": "npm run build && wrangler dev --local --port 8787",
+    "bootstrap": "node scripts/bootstrap.mjs",
+    "bootstrap:local": "node scripts/bootstrap.mjs --local",
+    "bootstrap:recover": "node scripts/bootstrap.mjs --recover",
+    "bootstrap:recover:local": "node scripts/bootstrap.mjs --local --recover",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:setup:local": "wrangler d1 execute DB --local --file=server/setup/psychiatry.sql",
+    "db:migrate:remote": "npm run check:config && wrangler d1 migrations apply DB --remote",
+    "db:setup:remote": "npm run check:config && wrangler d1 execute DB --remote --file=server/setup/psychiatry.sql",
+    "deploy:check": "npm run check && npm test && npm run test:runtime && npm run build && wrangler deploy --dry-run",
+    "deploy": "npm run check:config && npm run check && npm test && npm run build && wrangler deploy"
+  },
+  "devDependencies": { "wrangler": "4.156.1" }
+}
